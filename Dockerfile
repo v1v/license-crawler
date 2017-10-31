@@ -1,8 +1,8 @@
-FROM groovy
+FROM groovy:2.4-alpine
 
 WORKDIR /usr/src/app
 USER root
-RUN apt-get update; apt-get install -y maven
+RUN apk add --no-cache maven
 
 COPY . .
 
