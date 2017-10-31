@@ -7,30 +7,47 @@ section, if it doesn't exist then it will generate the effective pom and search 
 for the <licenses> section.
 
     CSV console output format:
-    <REPO>|<groupId>:<artifactId>|(licensed|<license-name>?|<license-url>?|Warning|No pom file)
+
+    status;fullname;pom;groupId;artifactId;pomLicense;ghLicense;pomLicenseName;pomLicenseUrl;ghLicenseName;message
+
 
 Where:
 
-    * REPO is the relative path including the organisation name
-    * groupId is one of the maven coordinates
+    * Status whether any errors/warnings or already found it.
+    * fullname the repo full name (org/reponame)
+    * pom the name of the pom file
+    * groupId is another maven coordinates
     * artifactId is another maven coordinates
-    * licensed is the hardcoded word to say it has been found
-    * license-name represents the <licenses><license><name> tag
-    * license-url represents the <licenses><license><url> tag
-    * Warning is just something happened when queering this particular repo
-    * No pom file is just no top pom file found in this repo.
+    * pomLicense whether the pom contains any <licenses><license><name> tag
+    * ghLicense whether the GH api will query the License section.
+    * pomLicenseName represents <licenses><license><name> tag
+    * pomLicenseUrl represents <licenses><license><name> tag
+    * ghLicenseName represents the name of the license in the rest api.
+    * message contains further details in case of errors/warnings
 
     for instance:
 
-        Repository:jenkinsci:gmaven|org.codehaus.gmaven:gmaven|licensed|ASLv2|http://www.apache.org/licenses/LICENSE-2.0.txt
-        Repository:jenkinsci:core-js|org.jvnet.hudson:htmlunit-core-js|licensed|Mozilla Public License version 1.1|http://www.mozilla.org/MPL/MPL-1.1.html
-        Repository:jenkinsci:jelly|org.jenkins-ci:commons-jelly
-        Repository:jenkinsci:jexl|commons-jexl:commons-jexl|licensed|The Apache Software License, Version 2.0|/LICENSE.txt
-        Repository:jenkinsci:json-lib|org.kohsuke.stapler:json-lib|licensed|The Apache Software License, Version 2.0|http://www.apache.org/licenses/LICENSE-2.0.txt
-        Repository:jenkinsci:maven-hudson-dev-plugin|org.jenkins-ci.tools:maven-jenkins-dev-plugin|licensed|licensed|Apache Software License - Version 2.0|http://www.apache.org/licenses/LICENSE-2.0|Eclipse Public License - Version 1.0|http://www.eclipse.org/org/documents/epl-v10.php
-        Repository:jenkinsci:netx|org.jvnet.hudson:netx
+        INFO;jenkinsci/gmaven;pom.xml;org.codehaus.gmaven;gmaven;true;true;ASLv2;http://www.apache.org/licenses/LICENSE-2.0.txt;Apache License 2.0;pom-license|github-license
+        INFO;jenkinsci/core-js;pom.xml;org.jvnet.hudson;htmlunit-core-js;true;true;Mozilla Public License version 1.1;http://www.mozilla.org/MPL/MPL-1.1.html;Other;pom-license|github-license
+        INFO;jenkinsci/jelly;pom.xml;org.jenkins-ci;commons-jelly;false;true;null;null;Apache License 2.0;null|github-license
+        INFO;jenkinsci/jexl;pom.xml;commons-jexl;commons-jexl;true;true;The Apache Software License, Version 2.0;/LICENSE.txt;Apache License 2.0;pom-license|github-license
 
 
+    JSON console output format:
+
+        {
+            "message": "github-license",
+            "status": "INFO",
+            "pomLicenseUrl": null,
+            "pomLicense": false,
+            "ghLicense": true,
+            "fullname": "jenkinsci/extended-choice-parameter-plugin",
+            "groupId": "",
+            "pomLicenseName": null,
+            "ghLicenseName": "MIT License",
+            "artifactId": "extended-choice-parameter",
+            "pom": "pom.xml"
+        }
 
 ## Build docker image
 
