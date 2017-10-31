@@ -57,6 +57,8 @@ Where:
 
     docker run --rm -ti -e GITHUB_TOKEN=XYZ -e GITHUB_USER=your -e GITHUB_ORG=jenkinsci license | tee licenses.txt
 
+    docker run --rm -v "$PWD":/home/groovy/scripts -w /home/groovy/scripts license groovy licenses.groovy -h
+
     # List all the repos without any license
     grep -v "|licensed"licenses.txt
 
