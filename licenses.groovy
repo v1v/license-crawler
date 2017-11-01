@@ -15,26 +15,26 @@ class MavenRepo {
     String pom = null
     String groupId = null
     String artifactId = null
-	boolean pomLicense = false
-	boolean ghLicense = false
-	String pomLicenseName
-	String pomLicenseUrl
-	String ghLicenseName
-	String status = 'WARN'
-	String message
+    boolean pomLicense = false
+    boolean ghLicense = false
+    String pomLicenseName
+    String pomLicenseUrl
+    String ghLicenseName
+    String status = 'WARN'
+    String message
 
-	def toCSV() {
-       return "${status};" +
-		 	  "${fullname};" +
-		 	  "${pom};" +
-		 	  "${groupId};" +
-			  "${artifactId};" +
-		 	  "${pomLicense};" +
-		 	  "${ghLicense};" +
-		 	  "${pomLicenseName};" +
-		 	  "${pomLicenseUrl};" +
-		 	  "${ghLicenseName};" +
-		 	  "${message}"
+    def toCSV() {
+        return "${status};" +
+                "${fullname};" +
+                "${pom};" +
+                "${groupId};" +
+                "${artifactId};" +
+                "${pomLicense};" +
+                "${ghLicense};" +
+                "${pomLicenseName};" +
+                "${pomLicenseUrl};" +
+                "${ghLicenseName};" +
+                "${message}"
     }
 }
 
@@ -58,109 +58,109 @@ format = opt.f?opt.f:'csv'
 
 // bail out if help parameter was supplied or not sufficient input to proceed
 if (opt.h || !token  || !user || !org ) {
-	cli.usage()
-	return
+    cli.usage()
+    return
 }
 
 // Expand EffectivePom given a POM file
 def expandEffectivePom(writer, data) {
-	File file = File.createTempFile("temp",".xml")
-	File effective = File.createTempFile("temp",".effective")
-	FileWriter fw = new FileWriter(file)
-	fw.write(writer.toString())
-	fw.close()
-	"mvn -B -f ${file.getPath()} help:effective-pom -Doutput=${effective.getPath()} ".execute().text
-	projects = new XmlSlurper().parse(effective)
-	projects['licenses']?.children().each {
-		data.pomLicense = true
-		if (it.name) { data.pomLicenseName = it.name.text() }
-		if (it.url) { data.pomLicenseUrl = it.url.text() }
-		data.message = data.message + "|pom-effective-license"
-	}
+    File file = File.createTempFile("temp",".xml")
+    File effective = File.createTempFile("temp",".effective")
+    FileWriter fw = new FileWriter(file)
+    fw.write(writer.toString())
+    fw.close()
+    "mvn -B -f ${file.getPath()} help:effective-pom -Doutput=${effective.getPath()} ".execute().text
+    projects = new XmlSlurper().parse(effective)
+    projects['licenses']?.children().each {
+        data.pomLicense = true
+        if (it.name) { data.pomLicenseName = it.name.text() }
+        if (it.url) { data.pomLicenseUrl = it.url.text() }
+        data.message = data.message + "|pom-effective-license"
+    }
 
-	if (data.pomLicense ) {
-		data.status = 'WARN'
-	} else {
-		data.status = 'INFO'
-	}
+    if (data.pomLicense ) {
+        data.status = 'WARN'
+    } else {
+        data.status = 'INFO'
+    }
 }
 
 
 try {
 
-	// Connect using a particular user and password
-	org = GitHub.connectUsingPassword(user, token).getOrganization(org)
+    // Connect using a particular user and password
+    org = GitHub.connectUsingPassword(user, token).getOrganization(org)
 
-	// For each repo in that particular organisation
-	org.listRepositories().each { repo ->
-		data = new MavenRepo(fullname: repo.getFullName())
-		try {
-			// Retrieve pom file from the root folder
-			pom = repo.getFileContent("pom.xml")
-			if (pom) {
-				try {
-					data.pom = pom.getName()
+    // For each repo in that particular organisation
+    org.listRepositories().each { repo ->
+        data = new MavenRepo(fullname: repo.getFullName())
+        try {
+            // Retrieve pom file from the root folder
+            pom = repo.getFileContent("pom.xml")
+            if (pom) {
+                try {
+                    data.pom = pom.getName()
 
-					// Manipulate files
-					InputStream inputStream = pom.read()
-					StringWriter writer = new StringWriter()
-					IOUtils.copy(inputStream, writer, "UTF-8")
+                    // Manipulate files
+                    InputStream inputStream = pom.read()
+                    StringWriter writer = new StringWriter()
+                    IOUtils.copy(inputStream, writer, "UTF-8")
 
-					// Parse xml file
-					project = new XmlSlurper().parseText(writer.toString())
+                    // Parse xml file
+                    project = new XmlSlurper().parseText(writer.toString())
 
-					// More info details
-					data.groupId = project['groupId'].text()
-					data.artifactId = project['artifactId'].text()
+                    // More info details
+                    data.groupId = project['groupId'].text()
+                    data.artifactId = project['artifactId'].text()
 
-					// If there is a licenses tag then query
-					project['licenses']?.children().each {
-						data.pomLicense = true
-						if (it.name) { data.pomLicenseName=it.name.text() }
-						if (it.url) { data.pomLicenseUrl=it.url.text() }
-						data.message = "pom-license"
-					}
+                    // If there is a licenses tag then query
+                    project['licenses']?.children().each {
+                        data.pomLicense = true
+                        if (it.name) { data.pomLicenseName=it.name.text() }
+                        if (it.url) { data.pomLicenseUrl=it.url.text() }
+                        data.message = "pom-license"
+                    }
 
-					// If no licenses then expand effective pom
-					if (! data.pomLicense ) {
-						expandEffectivePom(writer, data)
-					} else {
-						data.status = 'INFO'
-					}
-				} catch (IOException e) {
-					data.status = 'WARN'
-					data.message = e.getMessage()
-				} catch (org.xml.sax.SAXParseException sax) {
-					data.status = 'WARN'
-					data.message = sax.getMessage()
-				}
-			} else {
-				data.status = 'WARN'
-				data.message = 'No POM file'
-			}
+                    // If no licenses then expand effective pom
+                    if (! data.pomLicense ) {
+                        expandEffectivePom(writer, data)
+                    } else {
+                        data.status = 'INFO'
+                    }
+                } catch (IOException e) {
+                    data.status = 'WARN'
+                    data.message = e.getMessage()
+                } catch (org.xml.sax.SAXParseException sax) {
+                    data.status = 'WARN'
+                    data.message = sax.getMessage()
+                }
+            } else {
+                data.status = 'WARN'
+                data.message = 'No POM file'
+            }
 
-			if (all) {
-				license = repo?.getLicense()
-				if (license) {
-					data.ghLicense = true
-					data.ghLicenseName = license.name
-					data.message = data.message + "|github-license"
-				} else {
-					data.ghLicense = false
-				}
-			}
-		} catch (IOException ioe) {
-			data.status = 'WARN'
-			data.message = ioe.getMessage()
-		}
-		if (format.equals('json')) {
-			println new JsonBuilder( data ).toPrettyString()
-		} else {
-			println data.toCSV()
-		}
-	}
+            if (all) {
+                license = repo?.getLicense()
+                if (license) {
+                    data.ghLicense = true
+                    data.ghLicenseName = license.name
+                    data.message = data.message + "|github-license"
+                } else {
+                    data.ghLicense = false
+                }
+            }
+        } catch (IOException ioe) {
+            data.status = 'WARN'
+            data.message = ioe.getMessage()
+        }
+        if (format.equals('json')) {
+            println new JsonBuilder( data ).toPrettyString()
+        } else {
+            println data.toCSV()
+        }
+    }
 
 } catch (Exception e) {
-	e.printStackTrace()
-	println "An error occurred while fetching repositories ..."
+    e.printStackTrace()
+    println "An error occurred while fetching repositories ..."
 }
