@@ -49,18 +49,34 @@ Where:
             "pom": "pom.xml"
         }
 
+## Usage
+
+    usage: groovy licenses.groovy [options]
+                  Reports all repositories and their licenses
+     -a,--all                  Query also Licenses field from GitHub (or use
+                               GITHUB_ALL env variable)
+     -f,--format <arg>         Format to be used (csv,json)
+     -h,--help                 Print this usage info
+     -o,--organisation <arg>   GH organisation to be query (or use GITHUB_ORG
+                               env variable)
+     -t,--token <arg>          personal access token of a GitHub (or use
+                               GITHUB_TOKEN env variable)
+     -u,--user <arg>           GH username (or use GITHUB_USER env variable)
+
 ## Build docker image
 
     docker build -t license .
 
 ## Run docker image
 
+    ## Be patient since groovy docker container is a bit slow :)
+
+    # Default flags and redirecting output to a file
     docker run --rm -ti -e GITHUB_TOKEN=XYZ -e GITHUB_USER=your -e GITHUB_ORG=jenkinsci license | tee licenses.txt
 
+    # Query POM and also GH license RestAPI
+    docker run --rm -ti -e GITHUB_TOKEN=XYZ -e GITHUB_USER=your -e GITHUB_ORG=jenkinsci license groovy licenses.groovy --all
+
+    # Run help
     docker run --rm -v "$PWD":/home/groovy/scripts -w /home/groovy/scripts license groovy licenses.groovy -h
 
-    # List all the repos without any license
-    grep -v "|licensed"licenses.txt
-
-    # List all the repos with a license section
-    grep -v "|licensed"licenses.txt
